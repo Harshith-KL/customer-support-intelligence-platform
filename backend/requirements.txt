@@ -1,0 +1,18 @@
+﻿# Web framework
+fastapi
+uvicorn[standard]
+
+# Database and ORM
+sqlalchemy
+psycopg[binary]
+alembic
+
+# Configuration and validation
+pydantic-settings
+
+# AI integration
+openai
+
+# Testing
+pytest
+httpx
