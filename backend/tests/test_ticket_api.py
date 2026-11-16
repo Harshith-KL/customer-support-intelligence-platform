@@ -50,6 +50,26 @@ def test_ticket_crud_flow():
     assert response.status_code == 200
     assert response.json()["total"] >= 1
 
+    title_search = client.get(
+        "/api/v1/tickets/",
+        params={"search": "API integration test"},
+    )
+    assert title_search.status_code == 200
+    assert any(
+        item["ticket_id"] == ticket_id
+        for item in title_search.json()["items"]
+    )
+
+    description_search = client.get(
+        "/api/v1/tickets/",
+        params={"search": "creation and management"},
+    )
+    assert description_search.status_code == 200
+    assert any(
+        item["ticket_id"] == ticket_id
+        for item in description_search.json()["items"]
+    )
+
     # Update
     response = client.put(
         f"/api/v1/tickets/{ticket_id}",
@@ -58,6 +78,13 @@ def test_ticket_crud_flow():
     assert response.status_code == 200
     assert response.json()["status"] == "In Progress"
     assert response.json()["priority"] == "High"
+
+    persisted_update = client.get(
+        f"/api/v1/tickets/{ticket_id}"
+    )
+    assert persisted_update.status_code == 200
+    assert persisted_update.json()["status"] == "In Progress"
+    assert persisted_update.json()["priority"] == "High"
 
     # Duplicate creation
     response = client.post("/api/v1/tickets/", json=payload)
@@ -169,6 +196,51 @@ def test_ticket_not_found():
     )
 
     assert response.status_code == 404
+
+
+def test_ticket_filters_by_category_priority_and_status():
+    marker = f"FILTER-{uuid4().hex[:8]}"
+    cases = [
+        ("Billing", "High", "In Progress"),
+        ("Account", "High", "In Progress"),
+        ("Billing", "Medium", "In Progress"),
+        ("Billing", "High", "Open"),
+    ]
+    created_ids = []
+
+    try:
+        for category, priority, status in cases:
+            payload = make_ticket_payload()
+            payload["subject"] = f"{marker} filter test"
+            payload["description"] = f"{marker} description"
+            payload["category"] = category
+            payload["priority"] = priority
+            payload["status"] = status
+
+            response = client.post(
+                "/api/v1/tickets/",
+                json=payload,
+            )
+            assert response.status_code == 201
+            created_ids.append(payload["ticket_id"])
+
+        response = client.get(
+            "/api/v1/tickets/",
+            params={
+                "search": marker,
+                "category": "Billing",
+                "priority": "High",
+                "status": "In Progress",
+            },
+        )
+
+        assert response.status_code == 200
+        assert [
+            item["ticket_id"] for item in response.json()["items"]
+        ] == [created_ids[0]]
+    finally:
+        for ticket_id in created_ids:
+            client.delete(f"/api/v1/tickets/{ticket_id}")
 
 
 def test_invalid_ticket_payload():

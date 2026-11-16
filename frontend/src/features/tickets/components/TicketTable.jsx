@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { ConfirmationNumberOutlined } from "@mui/icons-material";
 
 import {
   Delete,
@@ -21,7 +22,11 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-function TicketTable({ tickets = [], onDelete }) {
+function TicketTable({
+  tickets = [],
+  onDelete,
+  emptyMessage = "Try adjusting your search or filters.",
+}) {
   const navigate = useNavigate();
 
   const getStatusColor = (status) => {
@@ -48,26 +53,51 @@ function TicketTable({ tickets = [], onDelete }) {
 
   if (!tickets.length) {
     return (
-      <Paper sx={{ p: 5, textAlign: "center" }}>
-        <Typography color="text.secondary">
-          No tickets found.
+      <Paper
+        variant="outlined"
+        sx={{
+          p: { xs: 4, sm: 6 },
+          textAlign: "center",
+          borderColor: "divider",
+          borderRadius: 3,
+        }}
+      >
+        <ConfirmationNumberOutlined
+          color="disabled"
+          sx={{ fontSize: 36, mb: 1 }}
+        />
+        <Typography variant="h6" mb={0.5}>
+          No tickets found
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {emptyMessage}
         </Typography>
       </Paper>
     );
   }
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
+    <TableContainer
+      component={Paper}
+      variant="outlined"
+      sx={{
+        borderColor: "divider",
+        borderRadius: 3,
+        overflowX: "auto",
+      }}
+    >
+      <Table sx={{ minWidth: 900 }}>
         <TableHead>
           <TableRow>
-            <TableCell>Ticket ID</TableCell>
+            <TableCell sx={{ width: 190 }}>Ticket ID</TableCell>
             <TableCell>Title</TableCell>
             <TableCell>Customer ID</TableCell>
             <TableCell>Category</TableCell>
             <TableCell>Priority</TableCell>
             <TableCell>Status</TableCell>
-            <TableCell align="right">Actions</TableCell>
+            <TableCell align="right" sx={{ width: 150 }}>
+              Actions
+            </TableCell>
           </TableRow>
         </TableHead>
 
@@ -80,12 +110,25 @@ function TicketTable({ tickets = [], onDelete }) {
               onClick={() => navigate(`/tickets/${ticket.id}`)}
             >
               <TableCell>
-                <Typography variant="body2" fontWeight={600}>
-                  {ticket.id}
-                </Typography>
+                <Tooltip title={ticket.id}>
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    sx={{
+                      maxWidth: 170,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {ticket.id}
+                  </Typography>
+                </Tooltip>
               </TableCell>
 
-              <TableCell>{ticket.title}</TableCell>
+              <TableCell sx={{ maxWidth: 320, whiteSpace: "normal" }}>
+                {ticket.title}
+              </TableCell>
               <TableCell>{ticket.customerName}</TableCell>
               <TableCell>{ticket.category}</TableCell>
 
@@ -105,9 +148,10 @@ function TicketTable({ tickets = [], onDelete }) {
                 />
               </TableCell>
 
-              <TableCell align="right">
+              <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                 <Tooltip title="View">
                   <IconButton
+                    aria-label={`View ticket ${ticket.id}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       navigate(`/tickets/${ticket.id}`);
@@ -119,6 +163,7 @@ function TicketTable({ tickets = [], onDelete }) {
 
                 <Tooltip title="Edit">
                   <IconButton
+                    aria-label={`Edit ticket ${ticket.id}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       navigate(`/tickets/${ticket.id}/edit`);
@@ -130,6 +175,7 @@ function TicketTable({ tickets = [], onDelete }) {
 
                 <Tooltip title="Delete">
                   <IconButton
+                    aria-label={`Delete ticket ${ticket.id}`}
                     color="error"
                     onClick={(event) => {
                       event.stopPropagation();

@@ -120,12 +120,14 @@ function DashboardPage() {
   return (
     <Box>
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        flexWrap="wrap"
-        gap={2}
-        mb={4}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
+          mb: 4,
+        }}
       >
         <Box>
           <Typography variant="h4">Dashboard</Typography>
@@ -155,10 +157,12 @@ function DashboardPage() {
       </Grid>
 
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
       >
         <Box>
           <Typography variant="h6">Recent Tickets</Typography>
@@ -175,6 +179,7 @@ function DashboardPage() {
       <TicketTable
         tickets={recentTickets}
         onDelete={(id) => deleteMutation.mutate(id)}
+        emptyMessage="Create your first ticket to see recent customer requests here."
       />
 
       {deleteMutation.isError && (

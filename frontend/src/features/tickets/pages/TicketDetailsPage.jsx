@@ -24,6 +24,10 @@ import {
   updateTicket,
 } from "../services/ticketService";
 
+import {
+  acceptAnalysis,
+} from "../../ai-analysis/services/aiAnalysisService";
+
 import AIAnalysisPanel from "../../ai-analysis/components/AIAnalysisPanel";
 
 import {
@@ -46,21 +50,29 @@ function TicketDetailsPage() {
     queryFn: () => getTicketById(ticketId),
   });
 
-  const mutation = useMutation({
+  const invalidateTicketData = () => {
+    queryClient.invalidateQueries({
+      queryKey: QUERY_KEYS.tickets,
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: QUERY_KEYS.dashboardTickets,
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: QUERY_KEYS.ticket(ticketId),
+    });
+  };
+
+  const statusMutation = useMutation({
     mutationFn: (updates) => updateTicket(ticketId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.tickets,
-      });
+    onSuccess: invalidateTicketData,
+  });
 
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.dashboardTickets,
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.ticket(ticketId),
-      });
-    },
+  const acceptMutation = useMutation({
+    mutationFn: ({ analysisId, recommendations }) =>
+      acceptAnalysis(ticketId, analysisId, recommendations),
+    onSuccess: invalidateTicketData,
   });
 
   if (isLoading) return <CircularProgress />;
@@ -79,27 +91,22 @@ function TicketDetailsPage() {
   }
 
   const handleStatusChange = (event) => {
-    mutation.mutate({
+    statusMutation.mutate({
       status: event.target.value,
-    });
-  };
-
-  const handleAcceptAnalysis = (analysis) => {
-    mutation.mutate({
-      category: analysis.category,
-      priority: analysis.priority,
     });
   };
 
   return (
     <Box>
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        flexWrap="wrap"
-        gap={2}
-        mb={3}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
+          mb: 3,
+        }}
       >
         <Box>
           <Typography variant="h4">
@@ -128,7 +135,7 @@ function TicketDetailsPage() {
           {ticket.description}
         </Typography>
 
-        <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
           <Chip label={ticket.category} />
           <Chip label={`Priority: ${ticket.priority}`} />
           <Chip label={`Status: ${ticket.status}`} />
@@ -148,6 +155,7 @@ function TicketDetailsPage() {
             <Typography variant="subtitle2">
               Resolution
             </Typography>
+
             <Typography variant="body2">
               {ticket.resolution}
             </Typography>
@@ -159,7 +167,7 @@ function TicketDetailsPage() {
           label="Update Status"
           value={ticket.status}
           onChange={handleStatusChange}
-          disabled={mutation.isPending}
+          disabled={statusMutation.isPending}
           size="small"
           sx={{ mt: 3, minWidth: 200 }}
         >
@@ -170,16 +178,34 @@ function TicketDetailsPage() {
           ))}
         </TextField>
 
-        {mutation.isError && (
+        {statusMutation.isError && (
           <Alert severity="error" sx={{ mt: 2 }}>
-            Unable to update ticket.
+            {statusMutation.error?.response?.data?.detail ||
+              "Unable to update ticket status."}
           </Alert>
         )}
       </Paper>
 
+      {acceptMutation.isSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          AI recommendations applied successfully.
+        </Alert>
+      )}
+
+      {acceptMutation.isError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {acceptMutation.error?.response?.data?.detail ||
+            "Unable to apply AI recommendations."}
+        </Alert>
+      )}
+
       <AIAnalysisPanel
+        key={ticket.id}
         ticket={ticket}
-        onAccept={handleAcceptAnalysis}
+        onAccept={(analysisId, recommendations) =>
+          acceptMutation.mutate({ analysisId, recommendations })
+        }
+        accepting={acceptMutation.isPending}
       />
     </Box>
   );

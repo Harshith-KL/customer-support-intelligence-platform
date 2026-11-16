@@ -44,6 +44,7 @@ class TicketRepository:
                     Ticket.ticket_id.ilike(search_term),
                     Ticket.customer_id.ilike(search_term),
                     Ticket.subject.ilike(search_term),
+                    Ticket.description.ilike(search_term),
                 )
             )
 

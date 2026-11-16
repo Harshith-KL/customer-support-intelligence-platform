@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Button,
+  Grid,
   MenuItem,
   TextField,
   Typography,
@@ -59,102 +60,114 @@ function TicketForm({
       component="form"
       onSubmit={handleSubmit(onSubmit)}
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2.5,
-        maxWidth: 800,
+        maxWidth: 880,
       }}
     >
-      <Typography variant="h6">
+      <Typography variant="h6" mb={2.5}>
         Ticket Information
       </Typography>
 
-      <TextField
-        label="Ticket Title"
-        fullWidth
-        {...register("title")}
-        error={!!errors.title}
-        helperText={errors.title?.message}
-      />
-
-      <TextField
-        label="Customer ID"
-        fullWidth
-        {...register("customerName")}
-        error={!!errors.customerName}
-        helperText={errors.customerName?.message}
-      />
-
-      <TextField
-        label="Description"
-        fullWidth
-        multiline
-        rows={5}
-        {...register("description")}
-        error={!!errors.description}
-        helperText={errors.description?.message}
-      />
-
-      {[
-        {
-          name: "category",
-          label: "Category",
-          options: TICKET_CATEGORIES,
-        },
-        {
-          name: "priority",
-          label: "Priority",
-          options: TICKET_PRIORITIES,
-        },
-        {
-          name: "sentiment",
-          label: "Sentiment",
-          options: TICKET_SENTIMENTS,
-        },
-        ...(initialValues
-          ? [{
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 7 }}>
+          <TextField
+            label="Ticket Title"
+            fullWidth
+            {...register("title")}
+            error={!!errors.title}
+            helperText={errors.title?.message}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <TextField
+            label="Customer ID"
+            fullWidth
+            {...register("customerName")}
+            error={!!errors.customerName}
+            helperText={errors.customerName?.message}
+          />
+        </Grid>
+        <Grid size={12}>
+          <TextField
+            label="Description"
+            fullWidth
+            multiline
+            minRows={5}
+            {...register("description")}
+            error={!!errors.description}
+            helperText={errors.description?.message}
+          />
+        </Grid>
+        {[
+          {
+            name: "category",
+            label: "Category",
+            options: TICKET_CATEGORIES,
+            size: { xs: 12, sm: 6 },
+          },
+          {
+            name: "priority",
+            label: "Priority",
+            options: TICKET_PRIORITIES,
+            size: { xs: 12, sm: 6 },
+          },
+          {
+            name: "sentiment",
+            label: "Sentiment",
+            options: TICKET_SENTIMENTS,
+            size: { xs: 12, sm: 6 },
+          },
+          ...(initialValues
+            ? [{
               name: "status",
               label: "Status",
               options: TICKET_STATUSES,
+              size: { xs: 12, sm: 6 },
             }]
-          : []),
-      ].map((fieldConfig) => (
-        <Controller
-          key={fieldConfig.name}
-          name={fieldConfig.name}
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              select
-              label={fieldConfig.label}
-              fullWidth
-              error={!!errors[fieldConfig.name]}
-              helperText={errors[fieldConfig.name]?.message}
+            : []),
+        ].map((fieldConfig) => (
+          <Grid key={fieldConfig.name} size={fieldConfig.size}>
+            <Controller
+              name={fieldConfig.name}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label={fieldConfig.label}
+                  fullWidth
+                  error={!!errors[fieldConfig.name]}
+                  helperText={errors[fieldConfig.name]?.message}
+                >
+                  {fieldConfig.options.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Grid>
+        ))}
+
+        {submitError && (
+          <Grid size={12}>
+            <Alert severity="error">{submitError}</Alert>
+          </Grid>
+        )}
+
+        <Grid size={12}>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 1 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isSubmitting}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
-              {fieldConfig.options.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
-        />
-      ))}
-
-      {submitError && (
-        <Alert severity="error">{submitError}</Alert>
-      )}
-
-      <Box display="flex" justifyContent="flex-end" gap={2}>
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Saving..." : submitLabel}
-        </Button>
-      </Box>
+              {isSubmitting ? "Saving..." : submitLabel}
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

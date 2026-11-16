@@ -42,6 +42,11 @@ class AIAnalysis(Base):
         nullable=True,
     )
 
+    reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     suggested_response: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,

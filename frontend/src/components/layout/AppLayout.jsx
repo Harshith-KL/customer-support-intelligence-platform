@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { Outlet } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
@@ -8,6 +8,8 @@ import Topbar from "./Topbar";
 
 function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const handleMenuClick = () => {
     setMobileOpen(true);
@@ -20,8 +22,9 @@ function AppLayout() {
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar
-        mobileOpen={mobileOpen}
+        open={mobileOpen}
         onClose={handleDrawerClose}
+        mobile={isMobile}
       />
 
       <Box
@@ -29,7 +32,7 @@ function AppLayout() {
         sx={{
           flexGrow: 1,
           minWidth: 0,
-          bgcolor: "#f5f7fb",
+          bgcolor: "background.default",
         }}
       >
         <Topbar onMenuClick={handleMenuClick} />

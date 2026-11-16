@@ -6,10 +6,11 @@ import {
   CircularProgress,
   MenuItem,
   Pagination,
+  Paper,
   TextField,
   Typography,
 } from "@mui/material";
-import { AddRounded } from "@mui/icons-material";
+import { AddRounded, SearchRounded } from "@mui/icons-material";
 import {
   useMutation,
   useQuery,
@@ -70,6 +71,7 @@ function TicketsPage() {
   });
 
   const tickets = data?.items ?? [];
+  const hasFilters = Boolean(search || category || priority || status);
 
   const clearFilters = () => {
     setSearch("");
@@ -80,7 +82,11 @@ function TicketsPage() {
   };
 
   if (isLoading) {
-    return <CircularProgress />;
+    return (
+      <Box sx={{ display: "grid", minHeight: 240, placeItems: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (isError) {
@@ -95,12 +101,14 @@ function TicketsPage() {
   return (
     <Box>
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        flexWrap="wrap"
-        gap={2}
-        mb={3}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
+          mb: 3,
+        }}
       >
         <Box>
           <Typography variant="h4">Tickets</Typography>
@@ -118,16 +126,42 @@ function TicketsPage() {
         </Button>
       </Box>
 
-      <Box display="flex" gap={2} flexWrap="wrap" mb={3}>
+      <Paper
+        variant="outlined"
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            sm: "repeat(2, minmax(0, 1fr))",
+            lg: "minmax(240px, 1.5fr) repeat(3, minmax(140px, 1fr)) auto",
+          },
+          alignItems: "center",
+          gap: { xs: 1.25, sm: 1.5 },
+          p: { xs: 1.5, sm: 2 },
+          mb: 2,
+          borderColor: "divider",
+          borderRadius: 3,
+        }}
+      >
         <TextField
-          size="small"
+          size="medium"
           placeholder="Search tickets..."
+          aria-label="Search tickets"
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
             setPage(1);
           }}
-          sx={{ minWidth: 220, flexGrow: 1 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <Box component="span" sx={{ display: "flex", mr: 1 }}>
+                  <SearchRounded color="action" fontSize="small" />
+                </Box>
+              ),
+            },
+          }}
+          sx={{ minWidth: 0 }}
         />
 
         {[
@@ -153,14 +187,14 @@ function TicketsPage() {
           <TextField
             key={filter.label}
             select
-            size="small"
+            size="medium"
             label={filter.label}
             value={filter.value}
             onChange={(event) => {
               filter.setter(event.target.value);
               setPage(1);
             }}
-            sx={{ minWidth: 150 }}
+            sx={{ minWidth: 0 }}
           >
             <MenuItem value="">All {filter.label}s</MenuItem>
             {filter.options.map((item) => (
@@ -171,14 +205,34 @@ function TicketsPage() {
           </TextField>
         ))}
 
-        <Button color="inherit" onClick={clearFilters}>
+        <Button
+          color="inherit"
+          onClick={clearFilters}
+          disabled={!hasFilters}
+          sx={{
+            justifySelf: { xs: "stretch", sm: "end" },
+            gridColumn: { xs: "auto", sm: "1 / -1", lg: "auto" },
+            whiteSpace: "nowrap",
+          }}
+        >
           Clear Filters
         </Button>
-      </Box>
+      </Paper>
 
-      <Typography color="text.secondary" variant="body2" mb={1.5}>
-        Showing {tickets.length} of {data?.total ?? 0} tickets
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1,
+          mb: 1.5,
+          px: 0.25,
+        }}
+      >
+        <Typography color="text.secondary" variant="body2">
+          Showing {tickets.length} of {data?.total ?? 0} tickets
+        </Typography>
+      </Box>
 
       <TicketTable
         tickets={tickets}
@@ -186,12 +240,25 @@ function TicketsPage() {
       />
 
       {data?.total_pages > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            mt: 3,
+            "& .MuiPagination-ul": {
+              justifyContent: "center",
+              flexWrap: "wrap",
+            },
+          }}
+        >
           <Pagination
             count={data.total_pages}
             page={page}
             onChange={(_, value) => setPage(value)}
             color="primary"
+            siblingCount={0}
+            boundaryCount={1}
           />
         </Box>
       )}
