@@ -16,3 +16,6 @@ openai
 # Testing
 pytest
 httpx
+
+
+python-multipart
