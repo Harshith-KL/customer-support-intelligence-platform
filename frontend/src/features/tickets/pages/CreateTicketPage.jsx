@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import TicketForm from "../components/TicketForm";
 import { createTicket } from "../services/ticketService";
+import { QUERY_KEYS } from "../../../utils/constants";
 
 function CreateTicketPage() {
   const navigate = useNavigate();
@@ -12,13 +13,16 @@ function CreateTicketPage() {
 
   const mutation = useMutation({
     mutationFn: createTicket,
-
-    onSuccess: () => {
+    onSuccess: (ticket) => {
       queryClient.invalidateQueries({
-        queryKey: ["tickets"],
+        queryKey: QUERY_KEYS.tickets,
       });
 
-      navigate("/tickets");
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.dashboardTickets,
+      });
+
+      navigate(`/tickets/${ticket.id}`);
     },
   });
 
@@ -35,6 +39,11 @@ function CreateTicketPage() {
       <Paper sx={{ p: { xs: 2, sm: 3 } }}>
         <TicketForm
           onSubmit={(data) => mutation.mutateAsync(data)}
+          isSubmitting={mutation.isPending}
+          submitError={
+            mutation.error?.response?.data?.detail ||
+            mutation.error?.message
+          }
         />
       </Paper>
     </Box>

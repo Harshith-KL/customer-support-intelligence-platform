@@ -1,3 +1,4 @@
+
 import {
   Chip,
   IconButton,
@@ -20,7 +21,7 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-function TicketTable({ tickets, onDelete }) {
+function TicketTable({ tickets = [], onDelete }) {
   const navigate = useNavigate();
 
   const getStatusColor = (status) => {
@@ -28,6 +29,7 @@ function TicketTable({ tickets, onDelete }) {
       Open: "info",
       "In Progress": "warning",
       Resolved: "success",
+      Closed: "default",
     };
 
     return colors[status] || "default";
@@ -61,7 +63,7 @@ function TicketTable({ tickets, onDelete }) {
           <TableRow>
             <TableCell>Ticket ID</TableCell>
             <TableCell>Title</TableCell>
-            <TableCell>Customer</TableCell>
+            <TableCell>Customer ID</TableCell>
             <TableCell>Category</TableCell>
             <TableCell>Priority</TableCell>
             <TableCell>Status</TableCell>
@@ -84,9 +86,7 @@ function TicketTable({ tickets, onDelete }) {
               </TableCell>
 
               <TableCell>{ticket.title}</TableCell>
-
               <TableCell>{ticket.customerName}</TableCell>
-
               <TableCell>{ticket.category}</TableCell>
 
               <TableCell>

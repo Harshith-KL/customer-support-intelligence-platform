@@ -1,11 +1,11 @@
 
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
   Grid,
   Typography,
-  CircularProgress,
-  Alert,
 } from "@mui/material";
 
 import {
@@ -28,50 +28,47 @@ import StatCard from "../../../components/common/StatCard";
 import TicketTable from "../../tickets/components/TicketTable";
 
 import {
-  getTickets,
   deleteTicket,
+  getAllTickets,
 } from "../../tickets/services/ticketService";
+
+import { QUERY_KEYS } from "../../../utils/constants";
 
 function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Fetch all tickets
   const {
     data: tickets = [],
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["tickets"],
-    queryFn: getTickets,
+    queryKey: QUERY_KEYS.dashboardTickets,
+    queryFn: getAllTickets,
   });
 
-  // Delete ticket mutation
   const deleteMutation = useMutation({
     mutationFn: deleteTicket,
-
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["tickets"],
+        queryKey: QUERY_KEYS.tickets,
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.dashboardTickets,
       });
     },
   });
 
-  // Loading state
-  if (isLoading) {
-    return <CircularProgress />;
-  }
+  if (isLoading) return <CircularProgress />;
 
-  // Error state
   if (isError) {
     return (
       <Alert severity="error">
-        Unable to load dashboard.
+        Unable to load dashboard statistics.
       </Alert>
     );
   }
 
-  // Calculate dashboard statistics
   const total = tickets.length;
 
   const open = tickets.filter(
@@ -86,7 +83,6 @@ function DashboardPage() {
     (ticket) => ticket.status === "Resolved"
   ).length;
 
-  // Statistics cards
   const stats = [
     {
       title: "Total Tickets",
@@ -114,7 +110,6 @@ function DashboardPage() {
     },
   ];
 
-  // Get latest five tickets
   const recentTickets = [...tickets]
     .sort(
       (a, b) =>
@@ -124,26 +119,17 @@ function DashboardPage() {
 
   return (
     <Box>
-      {/* Dashboard Header */}
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 2,
-          mb: 4,
-        }}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        flexWrap="wrap"
+        gap={2}
+        mb={4}
       >
         <Box>
-          <Typography variant="h4">
-            Dashboard
-          </Typography>
-
-          <Typography
-            color="text.secondary"
-            sx={{ mt: 0.5 }}
-          >
+          <Typography variant="h4">Dashboard</Typography>
+          <Typography color="text.secondary" sx={{ mt: 0.5 }}>
             Overview of your customer support operations.
           </Typography>
         </Box>
@@ -157,7 +143,6 @@ function DashboardPage() {
         </Button>
       </Box>
 
-      {/* Statistics Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {stats.map((stat) => (
           <Grid
@@ -169,24 +154,15 @@ function DashboardPage() {
         ))}
       </Grid>
 
-      {/* Recent Tickets Header */}
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
       >
         <Box>
-          <Typography variant="h6">
-            Recent Tickets
-          </Typography>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
+          <Typography variant="h6">Recent Tickets</Typography>
+          <Typography variant="body2" color="text.secondary">
             Latest customer support requests.
           </Typography>
         </Box>
@@ -196,11 +172,16 @@ function DashboardPage() {
         </Button>
       </Box>
 
-      {/* Recent Tickets Table */}
       <TicketTable
         tickets={recentTickets}
         onDelete={(id) => deleteMutation.mutate(id)}
       />
+
+      {deleteMutation.isError && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          Unable to delete ticket.
+        </Alert>
+      )}
     </Box>
   );
 }

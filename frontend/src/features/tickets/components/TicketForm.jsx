@@ -1,5 +1,6 @@
 
 import {
+  Alert,
   Box,
   Button,
   MenuItem,
@@ -15,37 +16,41 @@ import {
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
   TICKET_STATUSES,
+  TICKET_SENTIMENTS,
 } from "../../../utils/constants";
 
 const ticketSchema = z.object({
   title: z.string().trim().min(5, "Minimum 5 characters required"),
   description: z.string().trim().min(10, "Minimum 10 characters required"),
-  customerName: z.string().trim().min(2, "Customer name is required"),
+  customerName: z.string().trim().min(2, "Customer ID is required"),
   category: z.enum(TICKET_CATEGORIES),
   priority: z.enum(TICKET_PRIORITIES),
   status: z.enum(TICKET_STATUSES),
+  sentiment: z.enum(TICKET_SENTIMENTS),
 });
 
 function TicketForm({
   initialValues,
   onSubmit,
   submitLabel = "Create Ticket",
+  isSubmitting = false,
+  submitError,
 }) {
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(ticketSchema),
-
     defaultValues: {
       title: initialValues?.title || "",
       description: initialValues?.description || "",
       customerName: initialValues?.customerName || "",
-      category: initialValues?.category || "General Enquiry",
+      category: initialValues?.category || "Other",
       priority: initialValues?.priority || "Medium",
       status: initialValues?.status || "Open",
+      sentiment: initialValues?.sentiment || "Neutral",
     },
   });
 
@@ -73,7 +78,7 @@ function TicketForm({
       />
 
       <TextField
-        label="Customer Name"
+        label="Customer ID"
         fullWidth
         {...register("customerName")}
         error={!!errors.customerName}
@@ -90,62 +95,55 @@ function TicketForm({
         helperText={errors.description?.message}
       />
 
-      <Controller
-        name="category"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            select
-            label="Category"
-            fullWidth
-            error={!!errors.category}
-            helperText={errors.category?.message}
-          >
-            {TICKET_CATEGORIES.map((category) => (
-              <MenuItem key={category} value={category}>
-                {category}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
-      />
-
-      <Controller
-        name="priority"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            select
-            label="Priority"
-            fullWidth
-            error={!!errors.priority}
-            helperText={errors.priority?.message}
-          >
-            {TICKET_PRIORITIES.map((priority) => (
-              <MenuItem key={priority} value={priority}>
-                {priority}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
-      />
-
-      {initialValues && (
+      {[
+        {
+          name: "category",
+          label: "Category",
+          options: TICKET_CATEGORIES,
+        },
+        {
+          name: "priority",
+          label: "Priority",
+          options: TICKET_PRIORITIES,
+        },
+        {
+          name: "sentiment",
+          label: "Sentiment",
+          options: TICKET_SENTIMENTS,
+        },
+        ...(initialValues
+          ? [{
+              name: "status",
+              label: "Status",
+              options: TICKET_STATUSES,
+            }]
+          : []),
+      ].map((fieldConfig) => (
         <Controller
-          name="status"
+          key={fieldConfig.name}
+          name={fieldConfig.name}
           control={control}
           render={({ field }) => (
-            <TextField {...field} select label="Status" fullWidth>
-              {TICKET_STATUSES.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {status}
+            <TextField
+              {...field}
+              select
+              label={fieldConfig.label}
+              fullWidth
+              error={!!errors[fieldConfig.name]}
+              helperText={errors[fieldConfig.name]?.message}
+            >
+              {fieldConfig.options.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
                 </MenuItem>
               ))}
             </TextField>
           )}
         />
+      ))}
+
+      {submitError && (
+        <Alert severity="error">{submitError}</Alert>
       )}
 
       <Box display="flex" justifyContent="flex-end" gap={2}>

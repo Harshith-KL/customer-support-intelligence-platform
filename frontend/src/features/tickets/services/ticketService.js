@@ -1,93 +1,153 @@
 
-import { initialTickets } from "../../../utils/mockTickets";
+import apiClient from "../../../services/apiClient";
 
-const STORAGE_KEY = "customer_support_tickets";
+function mapTicket(ticket) {
+  return {
+    id: ticket.ticket_id,
+    title: ticket.subject,
+    customerName: ticket.customer_id,
+    description: ticket.description,
+    createdAt: ticket.created_at,
+    status: ticket.status,
+    category: ticket.category,
+    priority: ticket.priority,
+    sentiment: ticket.sentiment,
+    resolution: ticket.resolution,
+  };
+}
 
-function readTickets() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+function mapTicketPayload(data) {
+  const payload = {
+    customer_id: data.customerName,
+    subject: data.title,
+    description: data.description,
+    category: data.category,
+    priority: data.priority,
+    status: data.status,
+    sentiment: data.sentiment || "Neutral",
+    resolution: data.resolution ?? null,
+  };
 
-    if (stored === null) {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(initialTickets)
-      );
+  return payload;
+}
 
-      return initialTickets;
-    }
+export async function getTickets(params = {}) {
+  const response = await apiClient.get("/tickets/", {
+    params: {
+      page: params.page || 1,
+      page_size: params.pageSize || 10,
+      search: params.search || undefined,
+      category: params.category || undefined,
+      priority: params.priority || undefined,
+      status: params.status || undefined,
+      sentiment: params.sentiment || undefined,
+      sort_by: params.sortBy || "created_at",
+      sort_order: params.sortOrder || "desc",
+    },
+  });
 
-    return JSON.parse(stored);
-  } catch {
-    return initialTickets;
+  return {
+    ...response.data,
+    items: response.data.items.map(mapTicket),
+  };
+}
+
+export async function getAllTickets() {
+  const firstPage = await getTickets({
+    page: 1,
+    pageSize: 100,
+  });
+
+  if (firstPage.total_pages <= 1) {
+    return firstPage.items;
   }
-}
 
-function saveTickets(tickets) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(tickets)
+  const remainingPages = await Promise.all(
+    Array.from(
+      { length: firstPage.total_pages - 1 },
+      (_, index) =>
+        getTickets({
+          page: index + 2,
+          pageSize: 100,
+        })
+    )
   );
-}
 
-export async function getTickets() {
-  return readTickets();
+  return [
+    ...firstPage.items,
+    ...remainingPages.flatMap((page) => page.items),
+  ];
 }
 
 export async function getTicketById(id) {
-  const tickets = readTickets();
+  const response = await apiClient.get(
+    `/tickets/${encodeURIComponent(id)}`
+  );
 
-  return tickets.find((ticket) => ticket.id === id) || null;
+  return mapTicket(response.data);
 }
 
 export async function createTicket(data) {
-  const tickets = readTickets();
+  const ticketId = `TICKET-${crypto.randomUUID()}`;
 
-  const newTicket = {
-    ...data,
-    id: `TKT-${Date.now()}`,
-    status: "Open",
-    createdAt: new Date().toISOString(),
-    aiSummary: "",
-    aiReason: "",
+  const payload = {
+    ...mapTicketPayload(data),
+    ticket_id: ticketId,
+    created_at: new Date().toISOString(),
   };
 
-  saveTickets([newTicket, ...tickets]);
+  const response = await apiClient.post("/tickets/", payload);
 
-  return newTicket;
+  return mapTicket(response.data);
 }
 
 export async function updateTicket(id, updates) {
-  const tickets = readTickets();
+  const payload = {};
 
-  const exists = tickets.some((ticket) => ticket.id === id);
-
-  if (!exists) {
-    throw new Error("Ticket not found");
+  if (updates.title !== undefined) {
+    payload.subject = updates.title;
   }
 
-  const updatedTickets = tickets.map((ticket) =>
-    ticket.id === id
-      ? { ...ticket, ...updates }
-      : ticket
+  if (updates.customerName !== undefined) {
+    payload.customer_id = updates.customerName;
+  }
+
+  if (updates.description !== undefined) {
+    payload.description = updates.description;
+  }
+
+  if (updates.category !== undefined) {
+    payload.category = updates.category;
+  }
+
+  if (updates.priority !== undefined) {
+    payload.priority = updates.priority;
+  }
+
+  if (updates.status !== undefined) {
+    payload.status = updates.status;
+  }
+
+  if (updates.sentiment !== undefined) {
+    payload.sentiment = updates.sentiment;
+  }
+
+  if (updates.resolution !== undefined) {
+    payload.resolution = updates.resolution;
+  }
+
+  const response = await apiClient.put(
+    `/tickets/${encodeURIComponent(id)}`,
+    payload
   );
 
-  saveTickets(updatedTickets);
-
-  return updatedTickets.find((ticket) => ticket.id === id);
+  return mapTicket(response.data);
 }
 
 export async function deleteTicket(id) {
-  const tickets = readTickets();
-
-  const updatedTickets = tickets.filter(
-    (ticket) => ticket.id !== id
+  await apiClient.delete(
+    `/tickets/${encodeURIComponent(id)}`
   );
-
-  if (updatedTickets.length === tickets.length) {
-    throw new Error("Ticket not found");
-  }
-
-  saveTickets(updatedTickets);
 
   return id;
 }

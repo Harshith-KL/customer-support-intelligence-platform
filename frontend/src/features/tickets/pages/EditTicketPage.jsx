@@ -32,6 +32,7 @@ function EditTicketPage() {
     data: ticket,
     isLoading,
     isError,
+    error,
   } = useQuery({
     queryKey: QUERY_KEYS.ticket(ticketId),
     queryFn: () => getTicketById(ticketId),
@@ -39,10 +40,13 @@ function EditTicketPage() {
 
   const mutation = useMutation({
     mutationFn: (updates) => updateTicket(ticketId, updates),
-
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["tickets"],
+        queryKey: QUERY_KEYS.tickets,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.dashboardTickets,
       });
 
       queryClient.invalidateQueries({
@@ -56,7 +60,12 @@ function EditTicketPage() {
   if (isLoading) return <CircularProgress />;
 
   if (isError) {
-    return <Alert severity="error">Unable to load ticket.</Alert>;
+    return (
+      <Alert severity="error">
+        Unable to load ticket:{" "}
+        {error?.response?.data?.detail || error.message}
+      </Alert>
+    );
   }
 
   if (!ticket) {
@@ -74,6 +83,11 @@ function EditTicketPage() {
           initialValues={ticket}
           submitLabel="Save Changes"
           onSubmit={(data) => mutation.mutateAsync(data)}
+          isSubmitting={mutation.isPending}
+          submitError={
+            mutation.error?.response?.data?.detail ||
+            mutation.error?.message
+          }
         />
       </Paper>
     </Box>

@@ -26,20 +26,21 @@ import {
 
 import AIAnalysisPanel from "../../ai-analysis/components/AIAnalysisPanel";
 
-import { QUERY_KEYS } from "../../../utils/constants";
-import { TICKET_STATUSES } from "../../../utils/constants";
+import {
+  QUERY_KEYS,
+  TICKET_STATUSES,
+} from "../../../utils/constants";
 
 function TicketDetailsPage() {
   const { ticketId } = useParams();
-
   const navigate = useNavigate();
-
   const queryClient = useQueryClient();
 
   const {
     data: ticket,
     isLoading,
     isError,
+    error,
   } = useQuery({
     queryKey: QUERY_KEYS.ticket(ticketId),
     queryFn: () => getTicketById(ticketId),
@@ -47,10 +48,13 @@ function TicketDetailsPage() {
 
   const mutation = useMutation({
     mutationFn: (updates) => updateTicket(ticketId, updates),
-
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["tickets"],
+        queryKey: QUERY_KEYS.tickets,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.dashboardTickets,
       });
 
       queryClient.invalidateQueries({
@@ -62,7 +66,12 @@ function TicketDetailsPage() {
   if (isLoading) return <CircularProgress />;
 
   if (isError) {
-    return <Alert severity="error">Unable to load ticket.</Alert>;
+    return (
+      <Alert severity="error">
+        Unable to load ticket:{" "}
+        {error?.response?.data?.detail || error.message}
+      </Alert>
+    );
   }
 
   if (!ticket) {
@@ -79,8 +88,6 @@ function TicketDetailsPage() {
     mutation.mutate({
       category: analysis.category,
       priority: analysis.priority,
-      aiSummary: analysis.summary,
-      aiReason: analysis.reason,
     });
   };
 
@@ -121,24 +128,31 @@ function TicketDetailsPage() {
           {ticket.description}
         </Typography>
 
-        <Box
-          display="flex"
-          flexWrap="wrap"
-          gap={2}
-          mb={2}
-        >
+        <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
           <Chip label={ticket.category} />
           <Chip label={`Priority: ${ticket.priority}`} />
           <Chip label={`Status: ${ticket.status}`} />
+          <Chip label={`Sentiment: ${ticket.sentiment}`} />
         </Box>
 
         <Typography variant="body2">
-          Customer: {ticket.customerName}
+          Customer ID: {ticket.customerName}
         </Typography>
 
         <Typography variant="body2" color="text.secondary" mt={1}>
           Created: {new Date(ticket.createdAt).toLocaleString()}
         </Typography>
+
+        {ticket.resolution && (
+          <Box mt={2}>
+            <Typography variant="subtitle2">
+              Resolution
+            </Typography>
+            <Typography variant="body2">
+              {ticket.resolution}
+            </Typography>
+          </Box>
+        )}
 
         <TextField
           select
@@ -155,25 +169,13 @@ function TicketDetailsPage() {
             </MenuItem>
           ))}
         </TextField>
+
+        {mutation.isError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            Unable to update ticket.
+          </Alert>
+        )}
       </Paper>
-
-      {ticket.aiSummary && (
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" mb={1}>
-            Accepted AI Analysis
-          </Typography>
-
-          <Typography variant="body2">
-            {ticket.aiSummary}
-          </Typography>
-
-          {ticket.aiReason && (
-            <Typography color="text.secondary" mt={1}>
-              Reason: {ticket.aiReason}
-            </Typography>
-          )}
-        </Paper>
-      )}
 
       <AIAnalysisPanel
         ticket={ticket}

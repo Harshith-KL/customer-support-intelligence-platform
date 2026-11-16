@@ -1,10 +1,11 @@
 
 export const TICKET_CATEGORIES = [
-  "Technical Issue",
+  "Account",
   "Billing",
-  "Account Access",
-  "Feature Request",
-  "General Enquiry",
+  "Delivery",
+  "Other",
+  "Product",
+  "Technical",
 ];
 
 export const TICKET_PRIORITIES = [
@@ -18,9 +19,17 @@ export const TICKET_STATUSES = [
   "Open",
   "In Progress",
   "Resolved",
+  "Closed",
+];
+
+export const TICKET_SENTIMENTS = [
+  "Positive",
+  "Neutral",
+  "Negative",
 ];
 
 export const QUERY_KEYS = {
   tickets: ["tickets"],
   ticket: (id) => ["ticket", id],
+  dashboardTickets: ["dashboard-tickets"],
 };
